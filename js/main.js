@@ -121,19 +121,19 @@ function create_lines() {
 		
 		this.getChildren = function() {
 			let children = [];
-			let childs = /*p5.round*/ Math.floor( /*p5.randomGaussian*/ gaussian( this.childCount, this.childCountStdev )() + 0.5 );
+			let childs = /*p5.round*/ Math.floor( /*p5.randomGaussian*/ gaussian( this.childCount, this.childCountStdev ) + 0.5 );
 			let direction = /*p5.createVector*/ new THREE.Vector2( this.origin.x - this.previous.x, this.origin.y - this.previous.y);
 			//direction.normalize();
 
 			for (let i=0; i<childs; i++) {
 				let scale = 1.0;//randomGaussian( 1.0, distStdev);
 				let newOrigin = /*p5.createVector*/ new THREE.Vector2( scale*direction.x, scale*direction.y );
-				newOrigin.rotateAround( new THREE.Vector2(0,0),/*p5.randomGaussian*/gaussian( 0.0, this.dirStdev )() + depth*0.000001 );
+				newOrigin.rotateAround( new THREE.Vector2(0,0),/*p5.randomGaussian*/gaussian( 0.0, this.dirStdev ) + depth*0.000001 );
 				newOrigin.x += this.origin.x;
 				newOrigin.y += this.origin.y;
 				/*setTimeout( () => */
 				children.push( new randomWalkTree( this.newCol, newOrigin, 
-					this.origin, this.size, this.childCount - 0.0006, 
+					this.origin, this.size, this.childCount - 0.0016, 
 					this.childCountStdev+0.002, this.dirStdev+0.00001*this.depth, this.distStdev, this.depth + 1 ) );
 			}
 			return children;
@@ -168,32 +168,10 @@ function create_lines() {
 }
 
 function gaussian(mean, stdev) {
-    var y2;
-    var use_last = false;
-    return function() {
-        var y1;
-        if(use_last) {
-           y1 = y2;
-           use_last = false;
-        }
-        else {
-            var x1, x2, w;
-            do {
-                 x1 = 2.0 * Math.random() - 1.0;
-                 x2 = 2.0 * Math.random() - 1.0;
-                 w  = x1 * x1 + x2 * x2;               
-            } while( w >= 1.0);
-            w = Math.sqrt((-2.0 * Math.log(w))/w);
-            y1 = x1 * w;
-            y2 = x2 * w;
-            use_last = true;
-       }
-
-       var retval = mean + stdev * y1;
-       if(retval > 0) 
-           return retval;
-       return -retval;
-   }
+    var u = 0, v = 0;
+    while(u === 0) u = Math.random(); //Converting [0,1) to (0,1)
+    while(v === 0) v = Math.random();
+    return stdev*Math.sqrt( -2.0 * Math.log( u ) ) * Math.cos( 2.0 * Math.PI * v )+mean;
 }
 
 function render() {
