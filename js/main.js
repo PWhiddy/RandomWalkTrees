@@ -56,22 +56,12 @@ function init() {
 	
   	controls = new OrbitControls(camera, renderer.domElement);
   	controls.enableDampening = true;
-  	controls.dampeningFactor = 0.2;
+  	controls.dampeningFactor = 0.05;
 
 	start_time = Date.now();
 }
 
 function create_lines() {
-
-	let line_geo = new THREE.Geometry(); //new THREE.BufferGeometry();
-	let line_mat = new THREE.LineBasicMaterial( { /*vertexColors: THREE.VertexColors*/ } );
-
-	let positions = [];
-	let colors = [];
-
-	////////////
-	
-
 	
 	let nodes = [];
 
@@ -79,8 +69,8 @@ function create_lines() {
 	for (let i=0; i<count; i++) {
 		let c = [255*1/*Math.random()*/, 0*Math.random(), 0*Math.random()];
 		let o = new THREE.Vector3(2.0*(i-count/2),0, 0); //p5.createVector(0, 0);
-		let p = new THREE.Vector3(o.x, o.y-3.5, o.z); //p5.createVector(o.x, o.y + 0.5);
-		nodes.push( [new randomWalkTree( c, o, p, 3, 1.06, 0.5, 0.11, 0.1, 0 )] );
+		let p = new THREE.Vector3(o.x, o.y-3.0, o.z); //p5.createVector(o.x, o.y + 0.5);
+		nodes.push( [new randomWalkTree( c, o, p, 3, 1.06, 0.5, 0.1, 0.1, 0 )] );
 		//nodes.push( [new randomWalkTree( c, o, p, 3, 1.06, 0.5, 0.01, 0.1, 0 )] );
 		//nodes.push( [new randomWalkTree( c, o, p, 3, 1.06, 0.5, 0.01, 0.1, 0 )] );
 		//nodes.push( [new randomWalkTree( c, o, p, 3, 1.06, 0.5, 0.01, 0.1, 0 )] );
@@ -105,7 +95,7 @@ function create_lines() {
 		this.distStdev = distStdev;
 		this.depth = depth;
 		
-		this.show = function(p, c) {
+		this.show = function(p/*, c*/) {
 
 			p.push( new THREE.Vector3( this.previous.x, this.previous.y, this.previous.z ) );
 			p.push( new THREE.Vector3( this.origin.x, this.origin.y, this.origin.z ) );
@@ -137,6 +127,7 @@ function create_lines() {
 				let newOrigin = new THREE.Vector3( scale*direction.x, scale*direction.y, scale*direction.z );
 				//newOrigin.rotateAround( new THREE.Vector2(0,0),/*p5.randomGaussian*/gaussian( 0.0, this.dirStdev ) + depth*0.000001 );
 				let rDir = randomDir();
+				rDir.multiplyScalar( this.dirStdev );
 				newOrigin.x += rDir.x;
 				newOrigin.y += rDir.y;
 				newOrigin.z += rDir.z;
@@ -147,22 +138,55 @@ function create_lines() {
 				newOrigin.z += this.origin.z;
 				/*setTimeout( () => */
 				children.push( new randomWalkTree( this.newCol, newOrigin, 
-					this.origin, this.size, this.childCount - 0.0016, 
-					this.childCountStdev+0.002, this.dirStdev+0.00001*this.depth, this.distStdev, this.depth + 1 ) );
+					this.origin, this.size, this.childCount - 0.0008, 
+					this.childCountStdev+0.002, this.dirStdev+0.0003*this.depth, this.distStdev, this.depth + 1 ) );
 			}
 			return children;
 		}
 		
 	}
 
+
+	//let positions = [];
+	//let colors = [];
+	let all_lines = new THREE.Group();
 	
+	for (let cNodes of nodes) {
+		let line_geo = new THREE.Geometry(); //new THREE.BufferGeometry();
+		//let line_mat = new THREE.LineBasicMaterial( { /*vertexColors: THREE.VertexColors*/ } );
+		while (cNodes.length > 0) {
+			let cur = cNodes.pop();
+			cur.show( line_geo.vertices );
+			let cur_childs = cur.getChildren();
+			if (cur_childs.length == 0) { 
+				let mesh_lines = new MeshLine();
+				mesh_lines.setGeometry(line_geo, 
+					( x ) => Math.pow( 4 * x * ( 1 - x ), 0.5 ) );
+				let mesh_lines_mat = new MeshLineMaterial({
+					resolution: new THREE.Vector2( window.innerWidth, window.innerHeight )//,
+					//color: new THREE.Color( cur.newCol[0], cur.newCol[1], cur.newCol[2])//,
+					//lineWidth: 10
+					});
+				all_lines.add(new THREE.Mesh( mesh_lines.geometry, mesh_lines_mat) );
+				line_geo = new THREE.Geometry();
+			} else {
+				for (let c of cur_childs) {
+					cNodes.push(c);
+				}
+			}
+		}
+	}
+
+	return all_lines;
+
+	/*
 	for (let iter = 0; iter < 1900; iter++) {
 		//for (let i=0; i < 1; i++) {
 		for (let cNodes of nodes) {
 			for (let i=0; i < 20; i++) {
 				if (cNodes.length > 0) {
 					let cur = cNodes.pop();
-					cur.show(/*positions*/ line_geo.vertices, colors);
+					cur.show(/*positions* / line_geo.vertices, colors);
 					for (let n of cur.getChildren()) {
 						cNodes.push(n);
 					}
@@ -180,7 +204,7 @@ function create_lines() {
 	let mesh_lines_mat = new MeshLineMaterial({resolution: new THREE.Vector2( window.innerWidth, window.innerHeight )});
 	return new THREE.Mesh( mesh_lines.geometry, mesh_lines_mat);//THREE.LineSegments( line_geo, line_mat );
 
-	///////////////	
+	///////////////	*/
 
 }
 
