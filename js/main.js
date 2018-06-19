@@ -15,8 +15,9 @@ function init() {
 
 	//console.log(p5);
 	scene = new THREE.Scene();
-	camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 1.5, 800 );
-	camera.position.z = 25;
+	camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 2.5, 9800 );
+	camera.position.z = 125;
+	camera.position.y = -40;
 	renderer = new THREE.WebGLRenderer({antialias:false});
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setPixelRatio( window.devicePixelRatio );
@@ -27,9 +28,9 @@ function init() {
 	current_sel = null;
 	
 	const room_geo = new THREE.BoxBufferGeometry( 
-		145, 
-		120, 
-		145 );
+		1450, 
+		1200, 
+		1450 );
 
 	const room_mat = new THREE.MeshStandardMaterial( { 
 		color: new THREE.Color( 0.6, 0.6, 0.6),
@@ -74,11 +75,11 @@ function create_lines() {
 	
 	let nodes = [];
 
-	let count = 5;
+	let count = 1;
 	for (let i=0; i<count; i++) {
 		let c = [255*1/*Math.random()*/, 0*Math.random(), 0*Math.random()];
-		let o = new THREE.Vector2(2.0*(i-count/2),0); //p5.createVector(0, 0);
-		let p = new THREE.Vector2(o.x, o.y-0.3); //p5.createVector(o.x, o.y + 0.5);
+		let o = new THREE.Vector3(2.0*(i-count/2),0, 0); //p5.createVector(0, 0);
+		let p = new THREE.Vector3(o.x, o.y-3.5, o.z); //p5.createVector(o.x, o.y + 0.5);
 		nodes.push( [new randomWalkTree( c, o, p, 3, 1.06, 0.5, 0.11, 0.1, 0 )] );
 		//nodes.push( [new randomWalkTree( c, o, p, 3, 1.06, 0.5, 0.01, 0.1, 0 )] );
 		//nodes.push( [new randomWalkTree( c, o, p, 3, 1.06, 0.5, 0.01, 0.1, 0 )] );
@@ -106,8 +107,8 @@ function create_lines() {
 		
 		this.show = function(p, c) {
 
-			p.push( new THREE.Vector3( this.previous.x, this.previous.y, 0.0 ) );
-			p.push( new THREE.Vector3( this.origin.x, this.origin.y, 0.0 ) );
+			p.push( new THREE.Vector3( this.previous.x, this.previous.y, this.previous.z ) );
+			p.push( new THREE.Vector3( this.origin.x, this.origin.y, this.origin.z ) );
 			/*
 			p.push( this.previous.x, this.previous.y, 0.0 );
 			p.push( this.origin.x, this.origin.y, 0.0 );
@@ -124,16 +125,26 @@ function create_lines() {
 		
 		this.getChildren = function() {
 			let children = [];
-			let childs = /*p5.round*/ Math.floor( /*p5.randomGaussian*/ gaussian( this.childCount, this.childCountStdev ) + 0.5 );
-			let direction = /*p5.createVector*/ new THREE.Vector2( this.origin.x - this.previous.x, this.origin.y - this.previous.y);
+			let childs = Math.floor( gaussian( this.childCount, this.childCountStdev ) + 0.5 );
+			let dist = this.origin.distanceTo(this.previous);
+			let direction = new THREE.Vector3( this.origin.x - this.previous.x, 
+					                   this.origin.y - this.previous.y, 
+							   this.origin.z - this.previous.z );
 			//direction.normalize();
 
 			for (let i=0; i<childs; i++) {
 				let scale = 1.0;//randomGaussian( 1.0, distStdev);
-				let newOrigin = /*p5.createVector*/ new THREE.Vector2( scale*direction.x, scale*direction.y );
-				newOrigin.rotateAround( new THREE.Vector2(0,0),/*p5.randomGaussian*/gaussian( 0.0, this.dirStdev ) + depth*0.000001 );
+				let newOrigin = new THREE.Vector3( scale*direction.x, scale*direction.y, scale*direction.z );
+				//newOrigin.rotateAround( new THREE.Vector2(0,0),/*p5.randomGaussian*/gaussian( 0.0, this.dirStdev ) + depth*0.000001 );
+				let rDir = randomDir();
+				newOrigin.x += rDir.x;
+				newOrigin.y += rDir.y;
+				newOrigin.z += rDir.z;
+				newOrigin.normalize();
+				newOrigin.multiplyScalar(dist);
 				newOrigin.x += this.origin.x;
 				newOrigin.y += this.origin.y;
+				newOrigin.z += this.origin.z;
 				/*setTimeout( () => */
 				children.push( new randomWalkTree( this.newCol, newOrigin, 
 					this.origin, this.size, this.childCount - 0.0016, 
@@ -153,7 +164,7 @@ function create_lines() {
 					let cur = cNodes.pop();
 					cur.show(/*positions*/ line_geo.vertices, colors);
 					for (let n of cur.getChildren()) {
-						cNodes.push(n);	
+						cNodes.push(n);
 					}
 				}
 			}
@@ -174,16 +185,23 @@ function create_lines() {
 }
 
 function gaussian(mean, stdev) {
-    var u = 0, v = 0;
+    let u = 0, v = 0;
     while(u === 0) u = Math.random(); //Converting [0,1) to (0,1)
     while(v === 0) v = Math.random();
     return stdev*Math.sqrt( -2.0 * Math.log( u ) ) * Math.cos( 2.0 * Math.PI * v )+mean;
+}
+
+function randomDir() {
+	let v = new THREE.Vector3( gaussian(0.0, 1.0), gaussian(0.0, 1.0), gaussian(0.0, 1.0) );
+	v.normalize();
+	return v;
 }
 
 function render() {
 	
 	requestAnimationFrame( render );
 	const t = Date.now()-start_time;
+	lines.rotation.y += 0.01;
 	//controls.update()
 	//room.position.z += 0.51;
 	renderer.render(scene, camera);
