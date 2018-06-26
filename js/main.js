@@ -15,6 +15,7 @@ function init() {
 
 	//console.log(p5);
 	scene = new THREE.Scene();
+	scene.fog = new THREE.Fog(0x000000, 0.015, 1800);
 	camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 2.5, 9800 );
 	camera.position.z = 125;
 	camera.position.y = -40;
@@ -225,7 +226,7 @@ function render() {
 	
 	requestAnimationFrame( render );
 	const t = Date.now()-start_time;
-	lines.rotation.y += 0.01;
+	lines.rotation.y += 0.002;
 	//controls.update()
 	//room.position.z += 0.51;
 	renderer.render(scene, camera);
